@@ -1,0 +1,12 @@
+language: php
+
+php:
+  - '7.0'
+  - '7.1'
+  
+before_script:
+  - composer self-update
+  - composer --version
+  - composer require sunra/php-simple-html-dom-parser --no-update
+
+script: composer install --prefer-dist --no-interaction

@@ -1,0 +1,16 @@
+{
+    "name": "adamb/websitestatus",
+    "description": "Checks to see that the given array of websites are providing the 200 responce header as expected and can also check the SSL expriation date of the websites",
+    "type": "library",
+    "require": {
+        "adamb/database": "^1.0",
+        "phpmailer/phpmailer": "^5.2"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Adam Binnersley",
+            "email": "abinnersley@gmail.com"
+        }
+    ]
+}
