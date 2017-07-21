@@ -201,6 +201,14 @@ class Status{
     }
     
     /**
+     * Gets all of the results from the database to return as an array
+     * @return array The results will be return as an array
+     */
+    public function getResults(){
+        return self::$db->selectAll(self::$status_table);
+    }
+    
+    /**
      * Empty the database so the new results can be added
      * @return boolean If the database is successfully truncated will return true else will return false
      */
@@ -209,8 +217,8 @@ class Status{
     }
 
     /**
-     * 
-     * @return type
+     * Sends the emails if that option is set
+     * @return boolean If the email is sent successfully will return true else returns false
      */
     protected function sendEmail(){
         if($this->emailResults){
