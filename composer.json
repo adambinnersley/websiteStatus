@@ -12,5 +12,10 @@
             "name": "Adam Binnersley",
             "email": "abinnersley@gmail.com"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "SiteStatus\\": "src/"
+        }
+    }
 }
