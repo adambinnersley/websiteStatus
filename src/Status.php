@@ -241,7 +241,7 @@ class Status{
             $email->SetFrom($this->from, $this->fromName);
             $email->AddAddress($this->emailTo);
             $email->Subject = sprintf($subject, $this->count['issues']);
-            $email->MsgHTML(strintf($html, $this->count['number'], $this->count['issues'], $this->count['expired'], implode("</strong><br />\n<strong>",$this->count['problem_domains'])));
+            $email->MsgHTML(sprintf($html, $this->count['number'], $this->count['issues'], $this->count['expired'], implode("</strong><br />\n<strong>",$this->count['problem_domains'])));
             return $email->Send() ? true : false;
         }
         return false;
