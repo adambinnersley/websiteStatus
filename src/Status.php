@@ -36,8 +36,9 @@ class Status{
      * Constructor used to pass a Instance of the database
      * @param Database $db This should be an instance of the database connection
      */
-    public function __construct(Database $db){
-        self::$db = $db;
+    public function __construct($db){
+        if(is_object($db)){self::$db = $db;}
+        else{$this->storeResults = false;}
         ini_set('max_execution_time', 0);
     }
     
@@ -99,6 +100,7 @@ class Status{
      */
     public function setEmailTo($email){
         if(filter_var($email, FILTER_VALIDATE_EMAIL)){$this->emailTo = filter_var($email, FILTER_SANITIZE_EMAIL);}
+        return $this;
     }
     
     /**
@@ -108,7 +110,7 @@ class Status{
      * @param string $hostname This should be the hostname so this can be set when sending the email
      * @return $this
      */
-    protected function setSMTPInfo($username, $password, $hostname = false){
+    public function setSMTPInfo($username, $password, $hostname = false){
         $this->smtpUsername = $username;
         $this->smtpPassword = $password;
         $this->emailHostname = $hostname;
