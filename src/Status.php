@@ -9,6 +9,7 @@ namespace SiteStatus;
 
 use DBAL\Database;
 use PHPMailer;
+use GuzzleHttp\Client;
 
 class Status{
     protected static $db;
@@ -158,15 +159,9 @@ class Status{
      * @return int The website status code will be returned
      */
     protected function getWebsite($url){
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_exec($ch);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        return $statusCode;
+        $client = new Client();
+        $responce = $client->request('GET', $url);
+        return $responce->getStatusCode();
     }
     
     /**
