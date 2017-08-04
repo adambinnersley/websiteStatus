@@ -7,6 +7,6 @@ php:
 before_script:
   - composer self-update
   - composer --version
-  - composer require sunra/php-simple-html-dom-parser --no-update
+  - composer require sunra/php-simple-html-dom-parser guzzlehttp/guzzle --no-update
 
 script: composer install --prefer-dist --no-interaction
