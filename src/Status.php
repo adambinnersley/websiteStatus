@@ -8,7 +8,7 @@
 namespace SiteStatus;
 
 use DBAL\Database;
-use PHPMailer;
+use PHPMailer\PHPMailer\PHPMailer;
 use GuzzleHttp\Client;
 
 class Status{
@@ -219,7 +219,7 @@ class Status{
      */
     protected function sendEmail(){
         if($this->emailResults){
-            include '../email/domain-status-check-email.php';
+            include dirname(__DIR__).'/email/domain-status-check-email.php';
             $email = new PHPMailer();
             $email->SMTPAuth = true;
             $email->SMTPOptions = array(
