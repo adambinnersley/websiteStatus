@@ -14,6 +14,8 @@ use GuzzleHttp\Client;
 class Status{
     protected static $db;
     protected static $status_table = 'site_status';
+    
+    protected $client;
 
     protected $getSSLExpiry = true;
     protected $storeResults = true;
@@ -40,6 +42,7 @@ class Status{
     public function __construct($db){
         if(is_object($db)){self::$db = $db;}
         else{$this->storeResults = false;}
+        $this->client = new Client();
         ini_set('max_execution_time', 0);
     }
     
@@ -161,8 +164,7 @@ class Status{
      * @return int The website status code will be returned
      */
     protected function getWebsite($url){
-        $client = new Client();
-        $responce = $client->request('GET', $url);
+        $responce = $this->client->request('GET', $url, ['http_errors' => false]);
         return $responce->getStatusCode();
     }
     
