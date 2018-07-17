@@ -134,6 +134,7 @@ class Status{
             $this->checkDomain($websites);
         }
         $this->sendEmail();
+        return $this->siteInfo;
     }
     
     /**
@@ -151,6 +152,7 @@ class Status{
         }
         if($this->siteInfo[$i]['status'] == 200 && $this->getSSLExpiry){$this->siteInfo[$i]['cert'] = $this->getSSLCert($website);}
         $this->storeResultsinDB($this->siteInfo[$i]['domain'], $this->siteInfo[$i]['status'], $this->siteInfo[$i]['cert']);
+        return $this->siteInfo;
     }
 
     /**
