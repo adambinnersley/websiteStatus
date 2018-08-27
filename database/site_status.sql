@@ -5,7 +5,7 @@
 DROP TABLE IF EXISTS `site_status`;
 CREATE TABLE IF NOT EXISTS `site_status` (
   `website` varchar(255) NOT NULL,
-  `status` tinyint(3) UNSIGNED NOT NULL,
+  `status` mediumint(3) UNSIGNED NOT NULL,
   `ssl_expiry` datetime DEFAULT NULL,
   PRIMARY KEY (`website`),
   UNIQUE KEY `website` (`website`)

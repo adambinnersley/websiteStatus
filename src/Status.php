@@ -154,7 +154,7 @@ class Status{
             $this->count['problem_domains'][] = $website;
         }
         if($this->siteInfo[$i]['status'] == 200 && $this->getSSLExpiry){$this->siteInfo[$i]['cert'] = $this->getSSLCert($website);}
-        $this->storeResultsinDB($this->siteInfo[$i]['domain'], $this->siteInfo[$i]['status'], $this->siteInfo[$i]['cert']);
+        $this->storeResultsinDB($this->siteInfo[$i]['domain'], $this->siteInfo[$i]['status'], !empty($this->siteInfo[$i]['cert']) ? $this->siteInfo[$i]['cert'] : NULL);
         return $this->siteInfo;
     }
 
@@ -191,8 +191,8 @@ class Status{
      */
     protected function storeResultsinDB($website, $status, $certInfo){
         if($this->storeResults){
-            $ssl_expiry = date('Y-m-d H:i:s', $certInfo['validTo_time_t']);
-            if($ssl_expiry <= date('Y-m-d H:i:s')){
+            $ssl_expiry = is_null($certInfo) ? NULL : date('Y-m-d H:i:s', $certInfo['validTo_time_t']);
+            if($ssl_expiry <= date('Y-m-d H:i:s') || is_null($certInfo)){
                 $this->count['expired']++;
                 $this->count['problem_domains'][] = $website;
             }
