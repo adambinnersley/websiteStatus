@@ -17,9 +17,9 @@ class Status{
     
     protected $client;
 
-    protected $getSSLExpiry = true;
-    protected $storeResults = true;
-    protected $emailResults = true;
+    public $getSSLExpiry = true;
+    public $storeResults = true;
+    public $emailResults = true;
     
     protected $domains;
     protected $siteInfo = array();
