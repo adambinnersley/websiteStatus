@@ -12,8 +12,8 @@ use PHPMailer\PHPMailer\PHPMailer;
 use GuzzleHttp\Client;
 
 class Status{
-    protected static $db;
-    protected static $status_table = 'site_status';
+    protected $db;
+    protected $status_table = 'site_status';
     
     protected $client;
 
@@ -22,7 +22,7 @@ class Status{
     public $emailResults = true;
     
     protected $domains;
-    protected $siteInfo = array();
+    protected $siteInfo = [];
     
     protected $from = 'noreply@domain.com';
     protected $fromName = 'Website Status Check';
@@ -33,14 +33,14 @@ class Status{
     
     protected $emailTo;
     
-    public $count = array();
+    public $count = [];
 
     /**
      * Constructor used to pass a Instance of the database
      * @param Database $db This should be an instance of the database connection
      */
     public function __construct($db){
-        if(is_object($db)){self::$db = $db;}
+        if(is_object($db)){$this->db = $db;}
         else{$this->storeResults = false;}
         $this->client = new Client();
         ini_set('max_execution_time', 0);
@@ -52,7 +52,7 @@ class Status{
      * @return $this
      */
     public function setTableName($table){
-        self::$status_table = $table;
+        $this->status_table = $table;
         return $this;
     }
     
@@ -61,7 +61,7 @@ class Status{
      * @param boolean $getSSL Set this to false if you don't want to check the SSL certificate expiry
      * @return $this
      */
-    public function settingSSLInfo($getSSL = true){
+    public function setSSLInfo($getSSL = true){
         $this->getSSLExpiry = (bool)$getSSL;
         return $this;
     }
@@ -71,7 +71,7 @@ class Status{
      * @param boolean $storeResults If you want to store the results set to true else set to false
      * @return $this
      */
-    public function settingDBStore($storeResults = true){
+    public function setDBStore($storeResults = true){
         $this->storeResults = (bool)$storeResults;
         return $this;
     }
@@ -81,7 +81,7 @@ class Status{
      * @param boolean $email If you don't want to send an email on completion set this to false else the default is true
      * @return $this
      */
-    public function settingEmailResults($email = true){
+    public function setEmailResults($email = true){
         $this->emailResults = (bool)$email;
         return $this;
     }
@@ -174,9 +174,9 @@ class Status{
      * @return array The certificate information will be returned as an array
      */
     protected function getSSLCert($url){
-        $domain = 'https://'.str_replace(array('http://', 'https://'), '', strtolower($url)); // Force it to look at the https otherwise it fails
+        $domain = 'https://'.str_replace(['http://', 'https://'], '', strtolower($url)); // Force it to look at the https otherwise it fails
         $orignal_parse = parse_url($domain, PHP_URL_HOST);
-        $get = stream_context_create(array("ssl" => array("capture_peer_cert" => TRUE)));
+        $get = stream_context_create(["ssl" => ["capture_peer_cert" => TRUE]]);
         $read = stream_socket_client("ssl://".$orignal_parse.":443", $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $get);
         $cert = stream_context_get_params($read);
         return openssl_x509_parse($cert['options']['ssl']['peer_certificate']);
@@ -196,7 +196,10 @@ class Status{
                 $this->count['expired']++;
                 $this->count['problem_domains'][] = $website;
             }
-            return self::$db->insert(self::$status_table, array('website' => $website, 'status' => $status, 'ssl_expiry' => $ssl_expiry));
+            if($this->db->select($this->status_table, ['website' => $website])){
+                return $this->db->update($this->status_table, ['status' => $status, 'ssl_expiry' => $ssl_expiry], ['website' => $website], 1);
+            }
+            return $this->db->insert($this->status_table, ['website' => $website, 'status' => $status, 'ssl_expiry' => $ssl_expiry]);
         }
         return false;
     }
@@ -206,7 +209,7 @@ class Status{
      * @return array The results will be return as an array
      */
     public function getResults(){
-        return self::$db->selectAll(self::$status_table);
+        return $this->db->selectAll($this->status_table);
     }
     
     /**
@@ -214,7 +217,7 @@ class Status{
      * @return boolean If the database is successfully truncated will return true else will return false
      */
     protected function emptyDBResults(){
-        return self::$db->truncate(self::$status_table);
+        return $this->db->truncate($this->status_table);
     }
 
     /**
@@ -226,13 +229,13 @@ class Status{
             include dirname(__DIR__).'/email/domain-status-check-email.php';
             $email = new PHPMailer();
             $email->SMTPAuth = true;
-            $email->SMTPOptions = array(
-                'ssl' => array(
+            $email->SMTPOptions = [
+                'ssl' => [
                     'verify_peer' => false,
                     'verify_peer_name' => false,
                     'allow_self_signed' => true
-                )
-            );
+                ]
+            ];
             $email->Username = $this->smtpUsername;
             $email->Password = $this->smtpPassword;
             if(!empty($this->emailHostname)){
