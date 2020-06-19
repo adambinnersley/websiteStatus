@@ -125,7 +125,6 @@ class Status{
      * @param string|array $websites This should be wither a single website or an array of websites to check the status for
      */
     public function checkStatus($websites){
-        if($this->storeResults){$this->emptyDBResults();}
         if(is_array($websites)){
             $this->count['number'] = count($websites);
             foreach($websites as $i => $website){
@@ -216,7 +215,7 @@ class Status{
      * Empty the database so the new results can be added
      * @return boolean If the database is successfully truncated will return true else will return false
      */
-    protected function emptyDBResults(){
+    public function emptyResults(){
         return $this->db->truncate($this->status_table);
     }
 
