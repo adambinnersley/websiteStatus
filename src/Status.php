@@ -1,8 +1,9 @@
 <?php
-
 /**
- * Checks to see what response code an array of websites are providing and can also check the SSL expiration date of the websites, can also store the results in a database
- * 
+ * Checks to see what response code an website or array of websites
+ * are providing can also check the SSL expiration date of the websites
+ * and can also store the results in a database if needed
+ *
  * @author Adam Binnersley
  */
 namespace SiteStatus;
@@ -11,7 +12,8 @@ use DBAL\Database;
 use PHPMailer\PHPMailer\PHPMailer;
 use GuzzleHttp\Client;
 
-class Status{
+class Status
+{
     protected $db;
     protected $status_table = 'site_status';
     
@@ -39,39 +41,46 @@ class Status{
      * Constructor used to pass a Instance of the database
      * @param Database $db This should be an instance of the database connection
      */
-    public function __construct($db){
-        if(is_object($db)){$this->db = $db;}
-        else{$this->storeResults = false;}
+    public function __construct($db)
+    {
+        if (is_object($db)) {
+            $this->db = $db;
+        } else {
+            $this->storeResults = false;
+        }
         $this->client = new Client();
         ini_set('max_execution_time', 0);
     }
     
     /**
-     * Sets the table name where the results can be found 
+     * Sets the table name where the results can be found
      * @param string $table This should be the table where your results are stored should you be storing in a database
      * @return $this
      */
-    public function setTableName($table){
+    public function setTableName($table)
+    {
         $this->status_table = $table;
         return $this;
     }
     
     /**
-     * Sets the SSL check setting (default is that SSL info is checked) if you don't want the SSL info checking set this to false
+     * Sets the SSL check setting if you don't want the SSL info checking set this to false
      * @param boolean $getSSL Set this to false if you don't want to check the SSL certificate expiry
      * @return $this
      */
-    public function setSSLInfo($getSSL = true){
+    public function setSSLInfo($getSSL = true)
+    {
         $this->getSSLExpiry = (bool)$getSSL;
         return $this;
     }
     
     /**
-     * Changes the setting whether to store the results in the database or not (default is true and stores the results). If you don't want to store the results in the database set to false
+     * Changes the setting whether to store the results in the database (default is true).
      * @param boolean $storeResults If you want to store the results set to true else set to false
      * @return $this
      */
-    public function setDBStore($storeResults = true){
+    public function setDBStore($storeResults = true)
+    {
         $this->storeResults = (bool)$storeResults;
         return $this;
     }
@@ -81,7 +90,8 @@ class Status{
      * @param boolean $email If you don't want to send an email on completion set this to false else the default is true
      * @return $this
      */
-    public function setEmailResults($email = true){
+    public function setEmailResults($email = true)
+    {
         $this->emailResults = (bool)$email;
         return $this;
     }
@@ -92,18 +102,24 @@ class Status{
      * @param string $name This should be the displayed name where the emails come from
      * @return $this
      */
-    public function setEmailFrom($email, $name){
-        if(filter_var($email, FILTER_VALIDATE_EMAIL)){$this->from = filter_var($email, FILTER_SANITIZE_EMAIL);}
+    public function setEmailFrom($email, $name)
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->from = filter_var($email, FILTER_SANITIZE_EMAIL);
+        }
         $this->fromName = filter_var($name, FILTER_SANITIZE_STRING);
         return $this;
     }
     
     /**
      * Set where the automated emails will go to
-     * @param type $email This should be the email address where you want any emails to be sent on completion of the task
+     * @param string $email This should be the email address where emails are sent on completion of the task
      */
-    public function setEmailTo($email){
-        if(filter_var($email, FILTER_VALIDATE_EMAIL)){$this->emailTo = filter_var($email, FILTER_SANITIZE_EMAIL);}
+    public function setEmailTo($email)
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->emailTo = filter_var($email, FILTER_SANITIZE_EMAIL);
+        }
         return $this;
     }
     
@@ -114,7 +130,8 @@ class Status{
      * @param string $hostname This should be the hostname so this can be set when sending the email
      * @return $this
      */
-    public function setSMTPInfo($username, $password, $hostname = false){
+    public function setSMTPInfo($username, $password, $hostname = false)
+    {
         $this->smtpUsername = $username;
         $this->smtpPassword = $password;
         $this->emailHostname = $hostname;
@@ -122,16 +139,16 @@ class Status{
     }
     /**
      * Checks the status of either an individual website or an array of websites
-     * @param string|array $websites This should be wither a single website or an array of websites to check the status for
+     * @param string|array $websites This should be a single website or an array of websites to check the status for
      */
-    public function checkStatus($websites){
-        if(is_array($websites)){
+    public function checkStatus($websites)
+    {
+        if (is_array($websites)) {
             $this->count['number'] = count($websites);
-            foreach($websites as $i => $website){
+            foreach ($websites as $i => $website) {
                 $this->checkDomain($website, $i);
             }
-        }
-        else{
+        } else {
             $this->count['number'] = 1;
             $this->checkDomain($websites);
         }
@@ -144,16 +161,24 @@ class Status{
      * @param string $website This should be the domain name
      * @param int $i If multiple websites are being checked this will be an incrementing integer
      */
-    protected function checkDomain($website, $i = 0){
+    protected function checkDomain($website, $i = 0)
+    {
         $this->siteInfo[$i]['domain'] = $website;
         $this->siteInfo[$i]['status'] = $this->getWebsite($website);
-        if($this->siteInfo[$i]['status'] == 200){$this->count['ok']++;}
-        else{
+        if ($this->siteInfo[$i]['status'] == 200) {
+            $this->count['ok']++;
+        } else {
             $this->count['issue']++;
             $this->count['problem_domains'][] = $website;
         }
-        if($this->siteInfo[$i]['status'] == 200 && $this->getSSLExpiry){$this->siteInfo[$i]['cert'] = $this->getSSLCert($website);}
-        $this->storeResultsinDB($this->siteInfo[$i]['domain'], $this->siteInfo[$i]['status'], !empty($this->siteInfo[$i]['cert']) ? $this->siteInfo[$i]['cert'] : NULL);
+        if ($this->siteInfo[$i]['status'] == 200 && $this->getSSLExpiry) {
+            $this->siteInfo[$i]['cert'] = $this->getSSLCert($website);
+        }
+        $this->storeResultsinDB(
+            $this->siteInfo[$i]['domain'],
+            $this->siteInfo[$i]['status'],
+            (!empty($this->siteInfo[$i]['cert']) ? $this->siteInfo[$i]['cert'] : null)
+        );
         return $this->siteInfo;
     }
 
@@ -162,7 +187,8 @@ class Status{
      * @param string $url This should be the website address
      * @return int The website status code will be returned
      */
-    protected function getWebsite($url){
+    protected function getWebsite($url)
+    {
         $responce = $this->client->request('GET', $url, ['http_errors' => false]);
         return $responce->getStatusCode();
     }
@@ -172,10 +198,11 @@ class Status{
      * @param string $url This should the website address
      * @return array The certificate information will be returned as an array
      */
-    protected function getSSLCert($url){
-        $domain = 'https://'.str_replace(['http://', 'https://'], '', strtolower($url)); // Force it to look at the https otherwise it fails
+    protected function getSSLCert($url)
+    {
+        $domain = 'https://'.str_replace(['http://', 'https://'], '', strtolower($url)); // Force https else it fails
         $orignal_parse = parse_url($domain, PHP_URL_HOST);
-        $get = stream_context_create(["ssl" => ["capture_peer_cert" => TRUE]]);
+        $get = stream_context_create(["ssl" => ["capture_peer_cert" => true]]);
         $read = stream_socket_client("ssl://".$orignal_parse.":443", $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $get);
         $cert = stream_context_get_params($read);
         return openssl_x509_parse($cert['options']['ssl']['peer_certificate']);
@@ -186,19 +213,27 @@ class Status{
      * @param string $website This should be the website address
      * @param int $status This should be the status code retrieved for that website
      * @param array $certInfo This should be the certificate information in an array format retrieved from the website
-     * @return boolean If the information has successfully inserted into the database true will be returned else will return false 
+     * @return boolean If the information has successfully inserted will be returned else returns false
      */
-    protected function storeResultsinDB($website, $status, $certInfo){
-        if($this->storeResults){
-            $ssl_expiry = is_null($certInfo) ? NULL : date('Y-m-d H:i:s', $certInfo['validTo_time_t']);
-            if($ssl_expiry <= date('Y-m-d H:i:s') || is_null($certInfo)){
+    protected function storeResultsinDB($website, $status, $certInfo)
+    {
+        if ($this->storeResults) {
+            $ssl_expiry = is_null($certInfo) ? null : date('Y-m-d H:i:s', $certInfo['validTo_time_t']);
+            if ($ssl_expiry <= date('Y-m-d H:i:s') || is_null($certInfo)) {
                 $this->count['expired']++;
                 $this->count['problem_domains'][] = $website;
             }
-            if($this->db->select($this->status_table, ['website' => $website])){
-                return $this->db->update($this->status_table, ['status' => $status, 'ssl_expiry' => $ssl_expiry], ['website' => $website], 1);
+            if ($this->db->select($this->status_table, ['website' => $website])) {
+                return $this->db->update($this->status_table, [
+                    'status' => $status,
+                    'ssl_expiry' => $ssl_expiry
+                ], ['website' => $website], 1);
             }
-            return $this->db->insert($this->status_table, ['website' => $website, 'status' => $status, 'ssl_expiry' => $ssl_expiry]);
+            return $this->db->insert($this->status_table, [
+                'website' => $website,
+                'status' => $status,
+                'ssl_expiry' => $ssl_expiry
+            ]);
         }
         return false;
     }
@@ -207,7 +242,8 @@ class Status{
      * Gets all of the results from the database to return as an array
      * @return array The results will be return as an array
      */
-    public function getResults(){
+    public function getResults()
+    {
         return $this->db->selectAll($this->status_table);
     }
     
@@ -215,7 +251,8 @@ class Status{
      * Empty the database so the new results can be added
      * @return boolean If the database is successfully truncated will return true else will return false
      */
-    public function emptyResults(){
+    public function emptyResults()
+    {
         return $this->db->truncate($this->status_table);
     }
 
@@ -223,8 +260,9 @@ class Status{
      * Sends the emails if that option is set
      * @return boolean If the email is sent successfully will return true else returns false
      */
-    protected function sendEmail(){
-        if($this->emailResults){
+    protected function sendEmail()
+    {
+        if ($this->emailResults) {
             include dirname(__DIR__).'/email/domain-status-check-email.php';
             $email = new PHPMailer();
             $email->SMTPAuth = true;
@@ -237,14 +275,14 @@ class Status{
             ];
             $email->Username = $this->smtpUsername;
             $email->Password = $this->smtpPassword;
-            if(!empty($this->emailHostname)){
+            if (!empty($this->emailHostname)) {
                 $email->IsSMTP();
                 $email->Host = $this->emailHostname;
             }
             $email->SetFrom($this->from, $this->fromName);
             $email->AddAddress($this->emailTo);
             $email->Subject = sprintf($subject, $this->count['issues']);
-            $email->MsgHTML(sprintf($html, $this->count['number'], $this->count['issues'], $this->count['expired'], implode("</strong><br />\n<strong>",$this->count['problem_domains'])));
+            $email->MsgHTML(sprintf($html, $this->count['number'], $this->count['issues'], $this->count['expired'], implode("</strong><br />\n<strong>", $this->count['problem_domains'])));
             return $email->Send() ? true : false;
         }
         return false;
