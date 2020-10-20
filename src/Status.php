@@ -11,6 +11,7 @@ namespace SiteStatus;
 use DBAL\Database;
 use PHPMailer\PHPMailer\PHPMailer;
 use GuzzleHttp\Client;
+use Exception;
 
 class Status
 {
@@ -35,7 +36,7 @@ class Status
     
     protected $emailTo;
     
-    public $count = [];
+    public $count = ['number' => 0, 'ok' => 0, 'issues' => 0, 'expired' => 0, 'problem_domains' => []];
 
     /**
      * Constructor used to pass a Instance of the database
@@ -46,10 +47,19 @@ class Status
         if (is_object($db)) {
             $this->db = $db;
         } else {
-            $this->storeResults = false;
+            $this->setDBStore(false);
         }
         $this->client = new Client();
         ini_set('max_execution_time', 0);
+    }
+    
+    /**
+     * Returns the table name where the results can be found
+     * @return string
+     */
+    public function getTableName()
+    {
+        return $this->status_table;
     }
     
     /**
@@ -64,6 +74,15 @@ class Status
     }
     
     /**
+     * Gets the SSL checking setting
+     * @return boolean If SSL certificates are to be checked will return true else return false
+     */
+    public function getSSLInfo()
+    {
+        return $this->getSSLExpiry;
+    }
+    
+    /**
      * Sets the SSL check setting if you don't want the SSL info checking set this to false
      * @param boolean $getSSL Set this to false if you don't want to check the SSL certificate expiry
      * @return $this
@@ -75,6 +94,15 @@ class Status
     }
     
     /**
+     * Gets the setting if to store the results in the database or not
+     * @return boolean If results should be store in the database will return true els return false
+     */
+    public function getDBStore()
+    {
+        return $this->storeResults;
+    }
+    
+    /**
      * Changes the setting whether to store the results in the database (default is true).
      * @param boolean $storeResults If you want to store the results set to true else set to false
      * @return $this
@@ -83,6 +111,10 @@ class Status
     {
         $this->storeResults = (bool)$storeResults;
         return $this;
+    }
+    
+    public function getEmailResults()
+    {
     }
     
     /**
@@ -168,10 +200,10 @@ class Status
         if ($this->siteInfo[$i]['status'] == 200) {
             $this->count['ok']++;
         } else {
-            $this->count['issue']++;
+            $this->count['issues']++;
             $this->count['problem_domains'][] = $website;
         }
-        if ($this->siteInfo[$i]['status'] == 200 && $this->getSSLExpiry) {
+        if ($this->siteInfo[$i]['status'] == 200 && $this->getSSLInfo()) {
             $this->siteInfo[$i]['cert'] = $this->getSSLCert($website);
         }
         $this->storeResultsinDB(
@@ -189,8 +221,13 @@ class Status
      */
     protected function getWebsite($url)
     {
-        $responce = $this->client->request('GET', $url, ['http_errors' => false]);
-        return $responce->getStatusCode();
+        try{
+            $responce = $this->client->request('GET', $url, ['http_errors' => false/*, 'verify' => false*/]);
+            return $responce->getStatusCode();
+        }
+        catch (Exception $e) {
+             
+        }
     }
     
     /**
@@ -223,13 +260,13 @@ class Status
                 $this->count['expired']++;
                 $this->count['problem_domains'][] = $website;
             }
-            if ($this->db->select($this->status_table, ['website' => $website])) {
-                return $this->db->update($this->status_table, [
+            if ($this->db->select($this->getTableName(), ['website' => $website])) {
+                return $this->db->update($this->getTableName(), [
                     'status' => $status,
                     'ssl_expiry' => $ssl_expiry
                 ], ['website' => $website], 1);
             }
-            return $this->db->insert($this->status_table, [
+            return $this->db->insert($this->getTableName(), [
                 'website' => $website,
                 'status' => $status,
                 'ssl_expiry' => $ssl_expiry
@@ -244,7 +281,7 @@ class Status
      */
     public function getResults()
     {
-        return $this->db->selectAll($this->status_table);
+        return $this->db->selectAll($this->getTableName());
     }
     
     /**
@@ -253,7 +290,7 @@ class Status
      */
     public function emptyResults()
     {
-        return $this->db->truncate($this->status_table);
+        return $this->db->truncate($this->getTableName());
     }
 
     /**
