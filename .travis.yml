@@ -3,10 +3,16 @@ language: php
 php:
   - '7.3'
   - '7.4'
+
+services:
+  - mysql
   
 before_script:
   - composer self-update
   - composer --version
+  
+before_install:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS `site_status`;'
 
 install:
   - composer install
