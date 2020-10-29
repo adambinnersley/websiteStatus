@@ -226,7 +226,7 @@ class Status
             return $responce->getStatusCode();
         }
         catch (Exception $e) {
-             
+            echo "Caught exception: {$e->getMessage()}\n";
         }
     }
     
