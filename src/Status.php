@@ -263,7 +263,8 @@ class Status
             if ($this->db->select($this->getTableName(), ['website' => $website])) {
                 return $this->db->update($this->getTableName(), [
                     'status' => $status,
-                    'ssl_expiry' => $ssl_expiry
+                    'ssl_expiry' => $ssl_expiry,
+                    'last_updated' => date('Y-m-d H:i:s')
                 ], ['website' => $website], 1);
             }
             return $this->db->insert($this->getTableName(), [
